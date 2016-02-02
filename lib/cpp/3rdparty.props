@@ -1,10 +1,11 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <BOOST_ROOT>$(THIRD_PARTY)\boost\boost_1_47_0</BOOST_ROOT>
-    <OPENSSL_ROOT_DIR>$(THIRD_PARTY)\openssl\OpenSSL-Win32</OPENSSL_ROOT_DIR>
-    <LIBEVENT_ROOT>$(THIRD_PARTY)\libevent-2.0.21-stable</LIBEVENT_ROOT>
+    <THIRD_PARTY>E:\ULS\Thrift\third-party</THIRD_PARTY>
+    <BOOST_ROOT>$(THIRD_PARTY)\boost</BOOST_ROOT>
+    <OPENSSL_ROOT_DIR>$(THIRD_PARTY)\OpenSSL-Win32</OPENSSL_ROOT_DIR>
+    <LIBEVENT_ROOT>$(THIRD_PARTY)\libevent</LIBEVENT_ROOT>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
