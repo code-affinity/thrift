@@ -303,3 +303,4 @@ erl_crash.dump
 /ylwrap
 
 /cmake_*
+compiler/cpp/build/
