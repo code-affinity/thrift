@@ -108,10 +108,15 @@
     <ClCompile Include="src\thrift\transport\TPipeServer.cpp">
       <Filter>transport</Filter>
     </ClCompile>
-    <ClCompile Include="src\thrift\protocol\TProtocol.cpp" />
     <ClCompile Include="src\thrift\windows\OverlappedSubmissionThread.cpp" />
     <ClCompile Include="src\thrift\server\TServerFramework.cpp">
       <Filter>server</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thrift\server\TConnectedClient.cpp">
+      <Filter>server</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thrift\protocol\TProtocol.cpp">
+      <Filter>protocol</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
