@@ -22,6 +22,9 @@
 #include <stdint.h>
 #include <thrift/server/TServerFramework.h>
 
+#undef max
+#include <algorithm>
+
 namespace apache {
 namespace thrift {
 namespace server {

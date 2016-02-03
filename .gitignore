@@ -305,3 +305,4 @@ erl_crash.dump
 /cmake_*
 compiler/cpp/build/
 tutorial/cpp/build/
+*.opendb
