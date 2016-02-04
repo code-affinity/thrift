@@ -19,10 +19,6 @@
 
 find_package(Boost 1.53.0 REQUIRED)
 include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
-LIST(APPEND CMAKE_MODULE_PATH "C:/local/thrift/build/cmake")
-set(THRIFT_ROOT_DIR "C:/local/thrift")
-set(THRIFT_COMPILER "C:/local/thrift/compiler/cpp/Release/thrift.exe")
-set(WITH_SHARED_LIB true)
 
 #Make sure gen-cpp files can be included
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
