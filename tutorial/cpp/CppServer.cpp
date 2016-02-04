@@ -20,11 +20,13 @@
 #include <thrift/concurrency/ThreadManager.h>
 #include <thrift/concurrency/PlatformThreadFactory.h>
 #include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/protocol/TJSONProtocol.h>
 #include <thrift/server/TSimpleServer.h>
 #include <thrift/server/TThreadPoolServer.h>
 #include <thrift/server/TThreadedServer.h>
 #include <thrift/transport/TServerSocket.h>
 #include <thrift/transport/TSocket.h>
+#include <thrift/transport/THttpServer.h>
 #include <thrift/transport/TTransportUtils.h>
 #include <thrift/TToString.h>
 
@@ -132,11 +134,12 @@ class CalculatorCloneFactory : virtual public CalculatorIfFactory {
 };
 
 int main() {
+  // This uses the first constructor of TThreadedServer
   TThreadedServer server(
-    boost::make_shared<CalculatorProcessorFactory>(boost::make_shared<CalculatorCloneFactory>()),
-    boost::make_shared<TServerSocket>(9090), //port
-    boost::make_shared<TBufferedTransportFactory>(),
-    boost::make_shared<TBinaryProtocolFactory>());
+    boost::make_shared<CalculatorProcessorFactory>(boost::make_shared<CalculatorCloneFactory>()), // TProcessorFactory
+    boost::make_shared<TServerSocket>(9090),                                                      // TServerTransport
+    boost::make_shared<THttpServerTransportFactory>(),                                            // TransportFactory
+    boost::make_shared<TJSONProtocolFactory>());                                                  // TProtocolFactory
 
   /*
   // if you don't need per-connection state, do the following instead
