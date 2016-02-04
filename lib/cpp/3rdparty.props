@@ -2,8 +2,8 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <THIRD_PARTY>E:\ULS\Thrift\third-party</THIRD_PARTY>
-    <BOOST_ROOT>$(THIRD_PARTY)\boost</BOOST_ROOT>
+    <THIRD_PARTY>C:\local\</THIRD_PARTY>
+    <BOOST_ROOT>$(THIRD_PARTY)\boost_1_60_0</BOOST_ROOT>
     <OPENSSL_ROOT_DIR>$(THIRD_PARTY)\OpenSSL-Win32</OPENSSL_ROOT_DIR>
     <LIBEVENT_ROOT>$(THIRD_PARTY)\libevent</LIBEVENT_ROOT>
   </PropertyGroup>

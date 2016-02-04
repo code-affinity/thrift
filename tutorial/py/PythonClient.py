@@ -21,27 +21,23 @@
 
 import sys
 import glob
-sys.path.append('gen-py')
+sys.path.append('../gen-py')
 sys.path.insert(0, glob.glob('../../lib/py/build/lib*')[0])
 
 from tutorial import Calculator
 from tutorial.ttypes import InvalidOperation, Operation, Work
 
 from thrift import Thrift
-from thrift.transport import TSocket
-from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol
+from thrift.transport import THttpClient
+from thrift.protocol import TJSONProtocol
 
 
 def main():
     # Make socket
-    transport = TSocket.TSocket('localhost', 9090)
-
-    # Buffering is critical. Raw sockets are very slow
-    transport = TTransport.TBufferedTransport(transport)
+    transport = THttpClient.THttpClient('http://localhost:9090')
 
     # Wrap in a protocol
-    protocol = TBinaryProtocol.TBinaryProtocol(transport)
+    protocol = TJSONProtocol.TJSONProtocol(transport)
 
     # Create a client to use the protocol encoder
     client = Calculator.Client(protocol)

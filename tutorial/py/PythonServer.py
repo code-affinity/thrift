@@ -21,7 +21,7 @@
 
 import glob
 import sys
-sys.path.append('gen-py')
+sys.path.append('../gen-py')
 sys.path.insert(0, glob.glob('../../lib/py/build/lib*')[0])
 
 from tutorial import Calculator
@@ -31,8 +31,72 @@ from shared.ttypes import SharedStruct
 
 from thrift.transport import TSocket
 from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol
+from thrift.protocol import TJSONProtocol
+from thrift.server.THttpServer import ResponseException
+
+from six.moves import BaseHTTPServer
+
 from thrift.server import TServer
+
+# copied from thrift.server.THttpServer
+class MyHttpServer(TServer.TServer):
+  """A simple HTTP-based Thrift server
+
+  This class is not very performant, but it is useful (for example) for
+  acting as a mock version of an Apache-based PHP Thrift endpoint.
+  """
+  def __init__(self,
+               processor,
+               server_address,
+               inputProtocolFactory,
+               outputProtocolFactory=None,
+               server_class=BaseHTTPServer.HTTPServer):
+    """Set up protocol factories and HTTP server.
+
+    See BaseHTTPServer for server_address.
+    See TServer for protocol factories.
+    """
+    if outputProtocolFactory is None:
+      outputProtocolFactory = inputProtocolFactory
+
+    TServer.TServer.__init__(self, processor, None, None, None,
+        inputProtocolFactory, outputProtocolFactory)
+
+    thttpserver = self
+
+    class RequestHander(BaseHTTPServer.BaseHTTPRequestHandler):
+      def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("allow", "POST,OPTIONS")
+        self.send_header("access-control-allow-origin", "*")
+        self.send_header("access-control-allow-headers", "content-type")
+        self.end_headers()
+
+      def do_POST(self):
+        # Don't care about the request path.
+        itrans = TTransport.TFileObjectTransport(self.rfile)
+        otrans = TTransport.TFileObjectTransport(self.wfile)
+        itrans = TTransport.TBufferedTransport(
+          itrans, int(self.headers['Content-Length']))
+        otrans = TTransport.TMemoryBuffer()
+        iprot = thttpserver.inputProtocolFactory.getProtocol(itrans)
+        oprot = thttpserver.outputProtocolFactory.getProtocol(otrans)
+        try:
+          thttpserver.processor.process(iprot, oprot)
+        except ResponseException as exn:
+          exn.handler(self)
+        else:
+          self.send_response(200)
+          self.send_header("content-type", "application/x-thrift")
+          self.send_header("access-control-allow-origin", "*")
+          self.send_header("access-control-allow-headers", "content-type")
+          self.end_headers()
+          self.wfile.write(otrans.getvalue())
+
+    self.httpd = server_class(server_address, RequestHander)
+
+  def serve(self):
+    self.httpd.serve_forever()
 
 
 class CalculatorHandler:
@@ -85,11 +149,9 @@ class CalculatorHandler:
 if __name__ == '__main__':
     handler = CalculatorHandler()
     processor = Calculator.Processor(handler)
-    transport = TSocket.TServerSocket(port=9090)
-    tfactory = TTransport.TBufferedTransportFactory()
-    pfactory = TBinaryProtocol.TBinaryProtocolFactory()
+    pfactory = TJSONProtocol.TJSONProtocolFactory()
 
-    server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
+    server = MyHttpServer(processor, ("localhost", 9090), pfactory)
 
     # You could do one of these for a multithreaded server
     # server = TServer.TThreadedServer(processor, transport, tfactory, pfactory)

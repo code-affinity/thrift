@@ -32,8 +32,8 @@ namespace CSharpTutorial
         {
             try
             {
-                TTransport transport = new TSocket("localhost", 9090);
-                TProtocol protocol = new TBinaryProtocol(transport);
+                TTransport transport = new THttpClient(new Uri("http://localhost:9090"));
+                TProtocol protocol = new TJSONProtocol(transport);
                 Calculator.Client client = new Calculator.Client(protocol);
 
                 transport.Open();

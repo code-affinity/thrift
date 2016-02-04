@@ -111,7 +111,7 @@ namespace CSharpTutorial
                 CalculatorHandler handler = new CalculatorHandler();
                 Calculator.Processor processor = new Calculator.Processor(handler);
                 TServerTransport serverTransport = new TServerSocket(9090);
-                TServer server = new TSimpleServer(processor, serverTransport);
+                TServer server = new TSimpleServer(processor, serverTransport, new TTransportFactory(), new Thrift.Protocol.TJSONProtocol.Factory());
 
                 // Use this for a multithreaded server
                 // server = new TThreadPoolServer(processor, serverTransport);
