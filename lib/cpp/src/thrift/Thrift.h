@@ -73,6 +73,29 @@ private:
   const char** names_;
 };
 
+template <typename TENUM>
+class TEnumClassIterator
+    : public std::iterator<std::forward_iterator_tag, std::pair<TENUM, const char*> > {
+public:
+  TEnumClassIterator(int n, TENUM* enums, const char** names)
+    : ii_(0), n_(n), enums_(enums), names_(names) {}
+
+  int operator++() { return ++ii_; }
+
+  bool operator!=(const TEnumClassIterator& end) {
+    THRIFT_UNUSED_VARIABLE(end);
+    assert(end.n_ == -1);
+    return (ii_ != n_);
+  }
+
+  std::pair<TENUM, const char*> operator*() const { return std::make_pair(enums_[ii_], names_[ii_]); }
+
+private:
+  int ii_;
+  const int n_;
+  TENUM* enums_;
+  const char** names_;
+};
 class TException : public std::exception {
 public:
   TException() : message_() {}

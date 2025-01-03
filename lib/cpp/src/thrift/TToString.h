@@ -20,6 +20,9 @@
 #ifndef _THRIFT_TOSTRING_H_
 #define _THRIFT_TOSTRING_H_ 1
 
+#include <boost/utility/enable_if.hpp>
+#include <boost/type_traits/is_enum.hpp>
+
 #include <cmath>
 #include <limits>
 #include <locale>
@@ -27,6 +30,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace apache {
@@ -38,10 +42,20 @@ const auto default_locale = std::locale("C");
 }
 
 template <typename T>
-std::string to_string(const T& t) {
+typename boost::disable_if<boost::is_enum<T>, std::string>::type
+to_string(const T& t) {
   std::ostringstream o;
   o.imbue(default_locale);
   o << t;
+  return o.str();
+}
+
+template <typename T>
+typename boost::enable_if<boost::is_enum<T>, std::string>::type
+to_string(const T& t) {
+  std::ostringstream o;
+  o.imbue(default_locale);
+  o << static_cast<std::underlying_type<T>::type>(t);
   return o.str();
 }
 

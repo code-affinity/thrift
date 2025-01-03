@@ -57,6 +57,7 @@ public:
 
 
     gen_pure_enums_ = false;
+    gen_enum_classes_ = false;
     use_include_prefix_ = false;
     gen_cob_style_ = false;
     gen_no_client_completion_ = false;
@@ -71,6 +72,8 @@ public:
     for( iter = parsed_options.begin(); iter != parsed_options.end(); ++iter) {
       if( iter->first.compare("pure_enums") == 0) {
         gen_pure_enums_ = true;
+      } else if (iter->first.compare("enum_classes") == 0) {
+        gen_enum_classes_ = true;
       } else if( iter->first.compare("include_prefix") == 0) {
         use_include_prefix_ = true;
       } else if( iter->first.compare("cob_style") == 0) {
@@ -325,6 +328,11 @@ private:
    * True if we should generate pure enums for Thrift enums, instead of wrapper classes.
    */
   bool gen_pure_enums_;
+ /**
+   * True if we should generate enum classes (scoped enumerators) for Thrift enums, 
+   * instead of wrapper classes around plain enums.
+   */
+  bool gen_enum_classes_;
 
   /**
    * True if we should generate templatized reader/writer methods.
@@ -583,17 +591,21 @@ void t_cpp_generator::generate_enum(t_enum* tenum) {
   vector<t_enum_value*> constants = tenum->get_constants();
 
   std::string enum_name = tenum->get_name();
-  if (!gen_pure_enums_) {
+  if (!gen_pure_enums_ && !gen_enum_classes_) {
     enum_name = "type";
     generate_java_doc(f_types_, tenum);
     f_types_ << indent() << "struct " << tenum->get_name() << " {" << '\n';
     indent_up();
   }
-  f_types_ << indent() << "enum " << enum_name;
+  if (gen_enum_classes_) {
+    f_types_ << indent() << "enum class " << enum_name;
+  } else {
+    f_types_ << indent() << "enum " << enum_name;
+  }
 
   generate_enum_constant_list(f_types_, constants, "", "", true);
 
-  if (!gen_pure_enums_) {
+  if (!gen_pure_enums_ && !gen_enum_classes_) {
     indent_down();
     f_types_ << "};" << '\n';
   }
@@ -608,20 +620,36 @@ void t_cpp_generator::generate_enum(t_enum* tenum) {
     prefix = tenum->get_name() + "::";
   }
 
-  f_types_impl_ << indent() << "int _k" << tenum->get_name() << "Values[] =";
+  if (gen_enum_classes_) {
+    f_types_impl_ << indent() << tenum->get_name() <<  " _k" << tenum->get_name() << "Values[] =";
+  } else {
+    f_types_impl_ << indent() << "int _k" << tenum->get_name() << "Values[] =";
+  }
   generate_enum_constant_list(f_types_impl_, constants, prefix.c_str(), "", false);
 
   f_types_impl_ << indent() << "const char* _k" << tenum->get_name() << "Names[] =";
   generate_enum_constant_list(f_types_impl_, constants, "\"", "\"", false);
 
-  f_types_ << indent() << "extern const std::map<int, const char*> _" << tenum->get_name()
-           << "_VALUES_TO_NAMES;" << '\n' << '\n';
-
-  f_types_impl_ << indent() << "const std::map<int, const char*> _" << tenum->get_name()
-                << "_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(" << constants.size() << ", _k"
-                << tenum->get_name() << "Values"
-                << ", _k" << tenum->get_name() << "Names), "
-                << "::apache::thrift::TEnumIterator(-1, nullptr, nullptr));" << '\n' << '\n';
+  if (gen_enum_classes_) {
+    f_types_ << indent() << "extern const std::map<" << tenum->get_name() << ", const char*> _" << tenum->get_name()
+             << "_VALUES_TO_NAMES;" << '\n' << '\n';
+  } else {
+    f_types_ << indent() << "extern const std::map<int, const char*> _" << tenum->get_name()
+      << "_VALUES_TO_NAMES;" << '\n' << '\n';
+  }
+  if (gen_enum_classes_) {
+    f_types_impl_ << indent() << "const std::map<" << tenum->get_name() << ", const char*> _" << tenum->get_name()
+      << "_VALUES_TO_NAMES(::apache::thrift::TEnumClassIterator<" << tenum->get_name() << ">(" << constants.size() << ", _k"
+      << tenum->get_name() << "Values"
+      << ", _k" << tenum->get_name() << "Names), "
+      << "::apache::thrift::TEnumClassIterator<" << tenum->get_name() << ">(-1, NULL, NULL));" << '\n' << '\n';
+  } else {
+    f_types_impl_ << indent() << "const std::map<int, const char*> _" << tenum->get_name()
+      << "_VALUES_TO_NAMES(::apache::thrift::TEnumIterator(" << constants.size() << ", _k"
+      << tenum->get_name() << "Values"
+      << ", _k" << tenum->get_name() << "Names), "
+      << "::apache::thrift::TEnumIterator(-1, nullptr, nullptr));" << '\n' << '\n';
+  }
 
   generate_enum_ostream_operator_decl(f_types_, tenum);
   generate_enum_ostream_operator(f_types_impl_, tenum);
@@ -635,7 +663,7 @@ void t_cpp_generator::generate_enum(t_enum* tenum) {
 void t_cpp_generator::generate_enum_ostream_operator_decl(std::ostream& out, t_enum* tenum) {
 
   out << "std::ostream& operator<<(std::ostream& out, const ";
-  if (gen_pure_enums_) {
+  if (gen_pure_enums_ || gen_enum_classes_) {
     out << tenum->get_name();
   } else {
     out << tenum->get_name() << "::type&";
@@ -651,7 +679,7 @@ void t_cpp_generator::generate_enum_ostream_operator(std::ostream& out, t_enum* 
 
   if (!has_custom_ostream(tenum)) {
     out << "std::ostream& operator<<(std::ostream& out, const ";
-    if (gen_pure_enums_) {
+    if (gen_pure_enums_ || gen_enum_classes_) {
       out << tenum->get_name();
     } else {
       out << tenum->get_name() << "::type&";
@@ -659,9 +687,9 @@ void t_cpp_generator::generate_enum_ostream_operator(std::ostream& out, t_enum* 
     out << " val) ";
     scope_up(out);
 
-    out << indent() << "std::map<int, const char*>::const_iterator it = _"
-             << tenum->get_name() << "_VALUES_TO_NAMES.find(val);" << '\n';
-    out << indent() << "if (it != _" << tenum->get_name() << "_VALUES_TO_NAMES.end()) {" << '\n';
+    out << indent() << "decltype(_" << tenum->get_name() << "_VALUES_TO_NAMES)::const_iterator it = _"
+             << tenum->get_name() << "_VALUES_TO_NAMES.find(val);" << endl;
+    out << indent() << "if (it != _" << tenum->get_name() << "_VALUES_TO_NAMES.end()) {" << endl;
     indent_up();
     out << indent() << "out << it->second;" << '\n';
     indent_down();
@@ -679,7 +707,7 @@ void t_cpp_generator::generate_enum_ostream_operator(std::ostream& out, t_enum* 
 
 void t_cpp_generator::generate_enum_to_string_helper_function_decl(std::ostream& out, t_enum* tenum) {
   out << "std::string to_string(const ";
-  if (gen_pure_enums_) {
+  if (gen_pure_enums_ || gen_enum_classes_) {
     out << tenum->get_name();
   } else {
     out << tenum->get_name() << "::type&";
@@ -691,7 +719,7 @@ void t_cpp_generator::generate_enum_to_string_helper_function_decl(std::ostream&
 void t_cpp_generator::generate_enum_to_string_helper_function(std::ostream& out, t_enum* tenum) {
   if (!has_custom_ostream(tenum)) {
     out << "std::string to_string(const ";
-    if (gen_pure_enums_) {
+    if (gen_pure_enums_ || gen_enum_classes_) {
       out << tenum->get_name();
     } else {
       out << tenum->get_name() << "::type&";
@@ -699,9 +727,9 @@ void t_cpp_generator::generate_enum_to_string_helper_function(std::ostream& out,
     out << " val) " ;
     scope_up(out);
 
-    out << indent() << "std::map<int, const char*>::const_iterator it = _"
-             << tenum->get_name() << "_VALUES_TO_NAMES.find(val);" << '\n';
-    out << indent() << "if (it != _" << tenum->get_name() << "_VALUES_TO_NAMES.end()) {" << '\n';
+    out << indent() << "decltype(_" << tenum->get_name() << "_VALUES_TO_NAMES)::const_iterator it = _"
+             << tenum->get_name() << "_VALUES_TO_NAMES.find(val);" << endl;
+    out << indent() << "if (it != _" << tenum->get_name() << "_VALUES_TO_NAMES.end()) {" << endl;
     indent_up();
     out << indent() << "return std::string(it->second);" << '\n';
     indent_down();
@@ -4532,7 +4560,7 @@ string t_cpp_generator::type_name(t_type* ttype, bool in_typedef, bool arg) {
     pname = class_prefix + ttype->get_name();
   }
 
-  if (ttype->is_enum() && !gen_pure_enums_) {
+  if (ttype->is_enum() && !gen_pure_enums_ && !gen_enum_classes_) {
     pname += "::type";
   }
 
@@ -4850,6 +4878,7 @@ THRIFT_REGISTER_GENERATOR(
     "                     Omits generation of default operators ==, != and <\n"
     "    templates:       Generate templatized reader/writer methods.\n"
     "    pure_enums:      Generate pure enums instead of wrapper classes.\n"
+    "    enum_classes:    Generate enum classes (scoped enumerators) instead of wrapper classes.\n"
     "    include_prefix:  Use full include paths in generated files.\n"
     "    moveable_types:  Generate move constructors and assignment operators.\n"
     "    no_ostream_operators:\n"

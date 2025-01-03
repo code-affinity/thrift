@@ -28,8 +28,16 @@ namespace apache {
 namespace thrift {
 
 class TEnumIterator;
+template <typename TENUM> class TEnumClassIterator;
 
 inline bool operator==(const TEnumIterator&, const TEnumIterator&) {
+  // Not entirely sure what the test should be here. It is only to enable
+  // iterator debugging and is not used in release mode.
+  return true;
+}
+
+template <typename TENUM>
+inline bool operator==(const TEnumClassIterator<TENUM>&, const TEnumClassIterator<TENUM>&) {
   // Not entirely sure what the test should be here. It is only to enable
   // iterator debugging and is not used in release mode.
   return true;
